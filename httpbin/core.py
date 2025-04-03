@@ -324,10 +324,10 @@ def view_delete():
     )
 
 
-# @app.route("/legacy")
-# def view_landing_page():
-#     """Generates Landing Page in legacy layout."""
-#     return render_template("index.html")
+@app.route("/legacy")
+def view_landing_page():
+    """Generates Landing Page in legacy layout."""
+    return render_template("index.html")
 
 
 # @app.route("/html")
