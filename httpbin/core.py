@@ -1296,301 +1296,301 @@ def resource(filename):
 #     return response
 
 
-# @app.route("/base64/<value>")
-# def decode_base64(value):
-#     """Decodes base64url-encoded string.
-#     ---
-#     tags:
-#       - Dynamic data
-#     parameters:
-#       - in: path
-#         name: value
-#         type: string
-#         default: SFRUUEJJTiBpcyBhd2Vzb21l
-#     produces:
-#       - text/html
-#     responses:
-#       200:
-#         description: Decoded base64 content.
-#     """
-#     encoded = value.encode("utf-8")  # base64 expects binary string as input
-#     try:
-#         return base64.urlsafe_b64decode(encoded).decode("utf-8")
-#     except:
-#         return "Incorrect Base64 data try: SFRUUEJJTiBpcyBhd2Vzb21l"
+@app.route("/base64/<value>")
+def decode_base64(value):
+    """Decodes base64url-encoded string.
+    ---
+    tags:
+      - Dynamic data
+    parameters:
+      - in: path
+        name: value
+        type: string
+        default: SFRUUEJJTiBpcyBhd2Vzb21l
+    produces:
+      - text/html
+    responses:
+      200:
+        description: Decoded base64 content.
+    """
+    encoded = value.encode("utf-8")  # base64 expects binary string as input
+    try:
+        return base64.urlsafe_b64decode(encoded).decode("utf-8")
+    except:
+        return "Incorrect Base64 data try: SFRUUEJJTiBpcyBhd2Vzb21l"
 
 
-# @app.route("/cache", methods=("GET",))
-# def cache():
-#     """Returns a 304 if an If-Modified-Since header or If-None-Match is present. Returns the same as a GET otherwise.
-#     ---
-#     tags:
-#       - Response inspection
-#     parameters:
-#       - in: header
-#         name: If-Modified-Since
-#       - in: header
-#         name: If-None-Match
-#     produces:
-#       - application/json
-#     responses:
-#       200:
-#         description: Cached response
-#       304:
-#         description: Modified
+@app.route("/cache", methods=("GET",))
+def cache():
+    """Returns a 304 if an If-Modified-Since header or If-None-Match is present. Returns the same as a GET otherwise.
+    ---
+    tags:
+      - Response inspection
+    parameters:
+      - in: header
+        name: If-Modified-Since
+      - in: header
+        name: If-None-Match
+    produces:
+      - application/json
+    responses:
+      200:
+        description: Cached response
+      304:
+        description: Modified
 
-#     """
-#     is_conditional = request.headers.get("If-Modified-Since") or request.headers.get(
-#         "If-None-Match"
-#     )
+    """
+    is_conditional = request.headers.get("If-Modified-Since") or request.headers.get(
+        "If-None-Match"
+    )
 
-#     if is_conditional is None:
-#         response = view_get()
-#         response.headers["Last-Modified"] = http_date()
-#         response.headers["ETag"] = uuid.uuid4().hex
-#         return response
-#     else:
-#         return status_code(304)
-
-
-# @app.route("/etag/<etag>", methods=("GET",))
-# def etag(etag):
-#     """Assumes the resource has the given etag and responds to If-None-Match and If-Match headers appropriately.
-#     ---
-#     tags:
-#       - Response inspection
-#     parameters:
-#       - in: header
-#         name: If-None-Match
-#       - in: header
-#         name: If-Match
-#     produces:
-#       - application/json
-#     responses:
-#       200:
-#         description: Normal response
-#       412:
-#         description: match
-
-#     """
-#     if_none_match = parse_multi_value_header(request.headers.get("If-None-Match"))
-#     if_match = parse_multi_value_header(request.headers.get("If-Match"))
-
-#     if if_none_match:
-#         if etag in if_none_match or "*" in if_none_match:
-#             response = status_code(304)
-#             response.headers["ETag"] = etag
-#             return response
-#     elif if_match:
-#         if etag not in if_match and "*" not in if_match:
-#             return status_code(412)
-
-#     # Special cases don't apply, return normal response
-#     response = view_get()
-#     response.headers["ETag"] = etag
-#     return response
+    if is_conditional is None:
+        response = view_get()
+        response.headers["Last-Modified"] = http_date()
+        response.headers["ETag"] = uuid.uuid4().hex
+        return response
+    else:
+        return status_code(304)
 
 
-# @app.route("/cache/<int:value>")
-# def cache_control(value):
-#     """Sets a Cache-Control header for n seconds.
-#     ---
-#     tags:
-#       - Response inspection
-#     parameters:
-#       - in: path
-#         name: value
-#         type: integer
-#     produces:
-#       - application/json
-#     responses:
-#       200:
-#         description: Cache control set
-#     """
-#     response = view_get()
-#     response.headers["Cache-Control"] = "public, max-age={0}".format(value)
-#     return response
+@app.route("/etag/<etag>", methods=("GET",))
+def etag(etag):
+    """Assumes the resource has the given etag and responds to If-None-Match and If-Match headers appropriately.
+    ---
+    tags:
+      - Response inspection
+    parameters:
+      - in: header
+        name: If-None-Match
+      - in: header
+        name: If-Match
+    produces:
+      - application/json
+    responses:
+      200:
+        description: Normal response
+      412:
+        description: match
+
+    """
+    if_none_match = parse_multi_value_header(request.headers.get("If-None-Match"))
+    if_match = parse_multi_value_header(request.headers.get("If-Match"))
+
+    if if_none_match:
+        if etag in if_none_match or "*" in if_none_match:
+            response = status_code(304)
+            response.headers["ETag"] = etag
+            return response
+    elif if_match:
+        if etag not in if_match and "*" not in if_match:
+            return status_code(412)
+
+    # Special cases don't apply, return normal response
+    response = view_get()
+    response.headers["ETag"] = etag
+    return response
 
 
-# @app.route("/encoding/utf8")
-# def encoding():
-#     """Returns a UTF-8 encoded body.
-#     ---
-#     tags:
-#       - Response formats
-#     produces:
-#       - text/html
-#     responses:
-#       200:
-#         description: Encoded UTF-8 content.
-#     """
-
-#     return render_template("UTF-8-demo.txt")
-
-
-# @app.route("/bytes/<int:n>")
-# def random_bytes(n):
-#     """Returns n random bytes generated with given seed
-#     ---
-#     tags:
-#       - Dynamic data
-#     parameters:
-#       - in: path
-#         name: n
-#         type: int
-#     produces:
-#       - application/octet-stream
-#     responses:
-#       200:
-#         description: Bytes.
-#     """
-
-#     n = min(n, 100 * 1024)  # set 100KB limit
-
-#     params = CaseInsensitiveDict(request.args.items())
-#     if "seed" in params:
-#         random.seed(int(params["seed"]))
-
-#     response = make_response()
-
-#     # Note: can't just use os.urandom here because it ignores the seed
-#     response.data = bytearray(random.randint(0, 255) for i in range(n))
-#     response.content_type = "application/octet-stream"
-#     return response
+@app.route("/cache/<int:value>")
+def cache_control(value):
+    """Sets a Cache-Control header for n seconds.
+    ---
+    tags:
+      - Response inspection
+    parameters:
+      - in: path
+        name: value
+        type: integer
+    produces:
+      - application/json
+    responses:
+      200:
+        description: Cache control set
+    """
+    response = view_get()
+    response.headers["Cache-Control"] = "public, max-age={0}".format(value)
+    return response
 
 
-# @app.route("/stream-bytes/<int:n>")
-# def stream_random_bytes(n):
-#     """Streams n random bytes generated with given seed, at given chunk size per packet.
-#     ---
-#     tags:
-#       - Dynamic data
-#     parameters:
-#       - in: path
-#         name: n
-#         type: int
-#     produces:
-#       - application/octet-stream
-#     responses:
-#       200:
-#         description: Bytes.
-#     """
-#     n = min(n, 100 * 1024)  # set 100KB limit
+@app.route("/encoding/utf8")
+def encoding():
+    """Returns a UTF-8 encoded body.
+    ---
+    tags:
+      - Response formats
+    produces:
+      - text/html
+    responses:
+      200:
+        description: Encoded UTF-8 content.
+    """
 
-#     params = CaseInsensitiveDict(request.args.items())
-#     if "seed" in params:
-#         random.seed(int(params["seed"]))
-
-#     if "chunk_size" in params:
-#         chunk_size = max(1, int(params["chunk_size"]))
-#     else:
-#         chunk_size = 10 * 1024
-
-#     def generate_bytes():
-#         chunks = bytearray()
-
-#         for i in xrange(n):
-#             chunks.append(random.randint(0, 255))
-#             if len(chunks) == chunk_size:
-#                 yield (bytes(chunks))
-#                 chunks = bytearray()
-
-#         if chunks:
-#             yield (bytes(chunks))
-
-#     headers = {"Content-Type": "application/octet-stream"}
-
-#     return Response(generate_bytes(), headers=headers)
+    return render_template("UTF-8-demo.txt")
 
 
-# @app.route("/range/<int:numbytes>")
-# def range_request(numbytes):
-#     """Streams n random bytes generated with given seed, at given chunk size per packet.
-#     ---
-#     tags:
-#       - Dynamic data
-#     parameters:
-#       - in: path
-#         name: numbytes
-#         type: int
-#     produces:
-#       - application/octet-stream
-#     responses:
-#       200:
-#         description: Bytes.
-#     """
+@app.route("/bytes/<int:n>")
+def random_bytes(n):
+    """Returns n random bytes generated with given seed
+    ---
+    tags:
+      - Dynamic data
+    parameters:
+      - in: path
+        name: n
+        type: int
+    produces:
+      - application/octet-stream
+    responses:
+      200:
+        description: Bytes.
+    """
 
-#     if numbytes <= 0 or numbytes > (100 * 1024):
-#         response = Response(
-#             headers={"ETag": "range%d" % numbytes, "Accept-Ranges": "bytes"}
-#         )
-#         response.status_code = 404
-#         response.data = "number of bytes must be in the range (0, 102400]"
-#         return response
+    n = min(n, 100 * 1024)  # set 100KB limit
 
-#     params = CaseInsensitiveDict(request.args.items())
-#     if "chunk_size" in params:
-#         chunk_size = max(1, int(params["chunk_size"]))
-#     else:
-#         chunk_size = 10 * 1024
+    params = CaseInsensitiveDict(request.args.items())
+    if "seed" in params:
+        random.seed(int(params["seed"]))
 
-#     duration = float(params.get("duration", 0))
-#     pause_per_byte = duration / numbytes
+    response = make_response()
 
-#     request_headers = get_headers()
-#     first_byte_pos, last_byte_pos = get_request_range(request_headers, numbytes)
-#     range_length = (last_byte_pos + 1) - first_byte_pos
+    # Note: can't just use os.urandom here because it ignores the seed
+    response.data = bytearray(random.randint(0, 255) for i in range(n))
+    response.content_type = "application/octet-stream"
+    return response
 
-#     if (
-#         first_byte_pos > last_byte_pos
-#         or first_byte_pos not in xrange(0, numbytes)
-#         or last_byte_pos not in xrange(0, numbytes)
-#     ):
-#         response = Response(
-#             headers={
-#                 "ETag": "range%d" % numbytes,
-#                 "Accept-Ranges": "bytes",
-#                 "Content-Range": "bytes */%d" % numbytes,
-#                 "Content-Length": "0",
-#             }
-#         )
-#         response.status_code = 416
-#         return response
 
-#     def generate_bytes():
-#         chunks = bytearray()
+@app.route("/stream-bytes/<int:n>")
+def stream_random_bytes(n):
+    """Streams n random bytes generated with given seed, at given chunk size per packet.
+    ---
+    tags:
+      - Dynamic data
+    parameters:
+      - in: path
+        name: n
+        type: int
+    produces:
+      - application/octet-stream
+    responses:
+      200:
+        description: Bytes.
+    """
+    n = min(n, 100 * 1024)  # set 100KB limit
 
-#         for i in xrange(first_byte_pos, last_byte_pos + 1):
+    params = CaseInsensitiveDict(request.args.items())
+    if "seed" in params:
+        random.seed(int(params["seed"]))
 
-#             # We don't want the resource to change across requests, so we need
-#             # to use a predictable data generation function
-#             chunks.append(ord("a") + (i % 26))
-#             if len(chunks) == chunk_size:
-#                 yield (bytes(chunks))
-#                 time.sleep(pause_per_byte * chunk_size)
-#                 chunks = bytearray()
+    if "chunk_size" in params:
+        chunk_size = max(1, int(params["chunk_size"]))
+    else:
+        chunk_size = 10 * 1024
 
-#         if chunks:
-#             time.sleep(pause_per_byte * len(chunks))
-#             yield (bytes(chunks))
+    def generate_bytes():
+        chunks = bytearray()
 
-#     content_range = "bytes %d-%d/%d" % (first_byte_pos, last_byte_pos, numbytes)
-#     response_headers = {
-#         "Content-Type": "application/octet-stream",
-#         "ETag": "range%d" % numbytes,
-#         "Accept-Ranges": "bytes",
-#         "Content-Length": str(range_length),
-#         "Content-Range": content_range,
-#     }
+        for i in xrange(n):
+            chunks.append(random.randint(0, 255))
+            if len(chunks) == chunk_size:
+                yield (bytes(chunks))
+                chunks = bytearray()
 
-#     response = Response(generate_bytes(), headers=response_headers)
+        if chunks:
+            yield (bytes(chunks))
 
-#     if (first_byte_pos == 0) and (last_byte_pos == (numbytes - 1)):
-#         response.status_code = 200
-#     else:
-#         response.status_code = 206
+    headers = {"Content-Type": "application/octet-stream"}
 
-#     return response
+    return Response(generate_bytes(), headers=headers)
+
+
+@app.route("/range/<int:numbytes>")
+def range_request(numbytes):
+    """Streams n random bytes generated with given seed, at given chunk size per packet.
+    ---
+    tags:
+      - Dynamic data
+    parameters:
+      - in: path
+        name: numbytes
+        type: int
+    produces:
+      - application/octet-stream
+    responses:
+      200:
+        description: Bytes.
+    """
+
+    if numbytes <= 0 or numbytes > (100 * 1024):
+        response = Response(
+            headers={"ETag": "range%d" % numbytes, "Accept-Ranges": "bytes"}
+        )
+        response.status_code = 404
+        response.data = "number of bytes must be in the range (0, 102400]"
+        return response
+
+    params = CaseInsensitiveDict(request.args.items())
+    if "chunk_size" in params:
+        chunk_size = max(1, int(params["chunk_size"]))
+    else:
+        chunk_size = 10 * 1024
+
+    duration = float(params.get("duration", 0))
+    pause_per_byte = duration / numbytes
+
+    request_headers = get_headers()
+    first_byte_pos, last_byte_pos = get_request_range(request_headers, numbytes)
+    range_length = (last_byte_pos + 1) - first_byte_pos
+
+    if (
+        first_byte_pos > last_byte_pos
+        or first_byte_pos not in xrange(0, numbytes)
+        or last_byte_pos not in xrange(0, numbytes)
+    ):
+        response = Response(
+            headers={
+                "ETag": "range%d" % numbytes,
+                "Accept-Ranges": "bytes",
+                "Content-Range": "bytes */%d" % numbytes,
+                "Content-Length": "0",
+            }
+        )
+        response.status_code = 416
+        return response
+
+    def generate_bytes():
+        chunks = bytearray()
+
+        for i in xrange(first_byte_pos, last_byte_pos + 1):
+
+            # We don't want the resource to change across requests, so we need
+            # to use a predictable data generation function
+            chunks.append(ord("a") + (i % 26))
+            if len(chunks) == chunk_size:
+                yield (bytes(chunks))
+                time.sleep(pause_per_byte * chunk_size)
+                chunks = bytearray()
+
+        if chunks:
+            time.sleep(pause_per_byte * len(chunks))
+            yield (bytes(chunks))
+
+    content_range = "bytes %d-%d/%d" % (first_byte_pos, last_byte_pos, numbytes)
+    response_headers = {
+        "Content-Type": "application/octet-stream",
+        "ETag": "range%d" % numbytes,
+        "Accept-Ranges": "bytes",
+        "Content-Length": str(range_length),
+        "Content-Range": content_range,
+    }
+
+    response = Response(generate_bytes(), headers=response_headers)
+
+    if (first_byte_pos == 0) and (last_byte_pos == (numbytes - 1)):
+        response.status_code = 200
+    else:
+        response.status_code = 206
+
+    return response
 
 
 @app.route("/links/<int:n>/<int:offset>")
