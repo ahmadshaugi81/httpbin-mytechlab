@@ -340,39 +340,39 @@ def resource(filename):
 ####################
 ####################
 
-# @app.route("/html")
-# def view_html_page():
-#     """Returns a simple HTML document.
-#     ---
-#     tags:
-#       - Response formats
-#     produces:
-#       - text/html
-#     responses:
-#       200:
-#         description: An HTML page.
-#     """
+@app.route("/html")
+def view_html_page():
+    """Returns a simple HTML document.
+    ---
+    tags:
+      - Response formats
+    produces:
+      - text/html
+    responses:
+      200:
+        description: An HTML page.
+    """
 
-#     return render_template("moby.html")
+    return render_template("moby.html")
 
 
-# @app.route("/robots.txt")
-# def view_robots_page():
-#     """Returns some robots.txt rules.
-#     ---
-#     tags:
-#       - Response formats
-#     produces:
-#       - text/plain
-#     responses:
-#       200:
-#         description: Robots file
-#     """
+@app.route("/robots.txt")
+def view_robots_page():
+    """Returns some robots.txt rules.
+    ---
+    tags:
+      - Response formats
+    produces:
+      - text/plain
+    responses:
+      200:
+        description: Robots file
+    """
 
-#     response = make_response()
-#     response.data = ROBOT_TXT
-#     response.content_type = "text/plain"
-#     return response
+    response = make_response()
+    response.data = ROBOT_TXT
+    response.content_type = "text/plain"
+    return response
 
 
 # @app.route("/deny")
