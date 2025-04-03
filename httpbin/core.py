@@ -324,6 +324,38 @@ def view_delete():
     )
 
 
+@app.route("/cookies")
+def view_cookies(hide_env=True):
+    """Returns cookie data.
+    ---
+    tags:
+      - Cookies
+    produces:
+      - application/json
+    responses:
+      200:
+        description: Set cookies.
+    """
+
+    cookies = dict(request.cookies.items())
+
+    if hide_env and ("show_env" not in request.args):
+        for key in ENV_COOKIES:
+            try:
+                del cookies[key]
+            except KeyError:
+                pass
+
+    return jsonify(cookies=cookies)
+
+
+@app.route("/forms/post")
+def view_forms_post():
+    """Simple HTML form."""
+
+    return render_template("forms-post.html")
+
+
 @app.route("/legacy")
 def view_landing_page():
     """Generates Landing Page in legacy layout."""
@@ -333,6 +365,15 @@ def resource(filename):
     path = os.path.join(tmpl_dir, filename)
     with open(path, "rb") as f:
       return f.read()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, default=5000)
+    parser.add_argument("--host", default="127.0.0.1")
+    args = parser.parse_args()
+    app.run(port=args.port, host=args.host)
+
 
 ####################
 ####################
@@ -830,38 +871,6 @@ def resource(filename):
 #     return response
 
 
-@app.route("/cookies")
-def view_cookies(hide_env=True):
-    """Returns cookie data.
-    ---
-    tags:
-      - Cookies
-    produces:
-      - application/json
-    responses:
-      200:
-        description: Set cookies.
-    """
-
-    cookies = dict(request.cookies.items())
-
-    if hide_env and ("show_env" not in request.args):
-        for key in ENV_COOKIES:
-            try:
-                del cookies[key]
-            except KeyError:
-                pass
-
-    return jsonify(cookies=cookies)
-
-
-@app.route("/forms/post")
-def view_forms_post():
-    """Simple HTML form."""
-
-    return render_template("forms-post.html")
-
-
 # @app.route("/cookies/set/<name>/<value>")
 # def set_cookie(name, value):
 #     """Sets a cookie and redirects to cookie list.
@@ -1296,494 +1305,486 @@ def view_forms_post():
 #     return response
 
 
-@app.route("/base64/<value>")
-def decode_base64(value):
-    """Decodes base64url-encoded string.
-    ---
-    tags:
-      - Dynamic data
-    parameters:
-      - in: path
-        name: value
-        type: string
-        default: SFRUUEJJTiBpcyBhd2Vzb21l
-    produces:
-      - text/html
-    responses:
-      200:
-        description: Decoded base64 content.
-    """
-    encoded = value.encode("utf-8")  # base64 expects binary string as input
-    try:
-        return base64.urlsafe_b64decode(encoded).decode("utf-8")
-    except:
-        return "Incorrect Base64 data try: SFRUUEJJTiBpcyBhd2Vzb21l"
-
-
-@app.route("/cache", methods=("GET",))
-def cache():
-    """Returns a 304 if an If-Modified-Since header or If-None-Match is present. Returns the same as a GET otherwise.
-    ---
-    tags:
-      - Response inspection
-    parameters:
-      - in: header
-        name: If-Modified-Since
-      - in: header
-        name: If-None-Match
-    produces:
-      - application/json
-    responses:
-      200:
-        description: Cached response
-      304:
-        description: Modified
-
-    """
-    is_conditional = request.headers.get("If-Modified-Since") or request.headers.get(
-        "If-None-Match"
-    )
-
-    if is_conditional is None:
-        response = view_get()
-        response.headers["Last-Modified"] = http_date()
-        response.headers["ETag"] = uuid.uuid4().hex
-        return response
-    else:
-        return status_code(304)
-
-
-@app.route("/etag/<etag>", methods=("GET",))
-def etag(etag):
-    """Assumes the resource has the given etag and responds to If-None-Match and If-Match headers appropriately.
-    ---
-    tags:
-      - Response inspection
-    parameters:
-      - in: header
-        name: If-None-Match
-      - in: header
-        name: If-Match
-    produces:
-      - application/json
-    responses:
-      200:
-        description: Normal response
-      412:
-        description: match
-
-    """
-    if_none_match = parse_multi_value_header(request.headers.get("If-None-Match"))
-    if_match = parse_multi_value_header(request.headers.get("If-Match"))
-
-    if if_none_match:
-        if etag in if_none_match or "*" in if_none_match:
-            response = status_code(304)
-            response.headers["ETag"] = etag
-            return response
-    elif if_match:
-        if etag not in if_match and "*" not in if_match:
-            return status_code(412)
-
-    # Special cases don't apply, return normal response
-    response = view_get()
-    response.headers["ETag"] = etag
-    return response
-
-
-@app.route("/cache/<int:value>")
-def cache_control(value):
-    """Sets a Cache-Control header for n seconds.
-    ---
-    tags:
-      - Response inspection
-    parameters:
-      - in: path
-        name: value
-        type: integer
-    produces:
-      - application/json
-    responses:
-      200:
-        description: Cache control set
-    """
-    response = view_get()
-    response.headers["Cache-Control"] = "public, max-age={0}".format(value)
-    return response
-
-
-@app.route("/encoding/utf8")
-def encoding():
-    """Returns a UTF-8 encoded body.
-    ---
-    tags:
-      - Response formats
-    produces:
-      - text/html
-    responses:
-      200:
-        description: Encoded UTF-8 content.
-    """
-
-    return render_template("UTF-8-demo.txt")
-
-
-@app.route("/bytes/<int:n>")
-def random_bytes(n):
-    """Returns n random bytes generated with given seed
-    ---
-    tags:
-      - Dynamic data
-    parameters:
-      - in: path
-        name: n
-        type: int
-    produces:
-      - application/octet-stream
-    responses:
-      200:
-        description: Bytes.
-    """
-
-    n = min(n, 100 * 1024)  # set 100KB limit
-
-    params = CaseInsensitiveDict(request.args.items())
-    if "seed" in params:
-        random.seed(int(params["seed"]))
-
-    response = make_response()
-
-    # Note: can't just use os.urandom here because it ignores the seed
-    response.data = bytearray(random.randint(0, 255) for i in range(n))
-    response.content_type = "application/octet-stream"
-    return response
-
-
-@app.route("/stream-bytes/<int:n>")
-def stream_random_bytes(n):
-    """Streams n random bytes generated with given seed, at given chunk size per packet.
-    ---
-    tags:
-      - Dynamic data
-    parameters:
-      - in: path
-        name: n
-        type: int
-    produces:
-      - application/octet-stream
-    responses:
-      200:
-        description: Bytes.
-    """
-    n = min(n, 100 * 1024)  # set 100KB limit
-
-    params = CaseInsensitiveDict(request.args.items())
-    if "seed" in params:
-        random.seed(int(params["seed"]))
-
-    if "chunk_size" in params:
-        chunk_size = max(1, int(params["chunk_size"]))
-    else:
-        chunk_size = 10 * 1024
-
-    def generate_bytes():
-        chunks = bytearray()
-
-        for i in xrange(n):
-            chunks.append(random.randint(0, 255))
-            if len(chunks) == chunk_size:
-                yield (bytes(chunks))
-                chunks = bytearray()
-
-        if chunks:
-            yield (bytes(chunks))
-
-    headers = {"Content-Type": "application/octet-stream"}
-
-    return Response(generate_bytes(), headers=headers)
-
-
-@app.route("/range/<int:numbytes>")
-def range_request(numbytes):
-    """Streams n random bytes generated with given seed, at given chunk size per packet.
-    ---
-    tags:
-      - Dynamic data
-    parameters:
-      - in: path
-        name: numbytes
-        type: int
-    produces:
-      - application/octet-stream
-    responses:
-      200:
-        description: Bytes.
-    """
-
-    if numbytes <= 0 or numbytes > (100 * 1024):
-        response = Response(
-            headers={"ETag": "range%d" % numbytes, "Accept-Ranges": "bytes"}
-        )
-        response.status_code = 404
-        response.data = "number of bytes must be in the range (0, 102400]"
-        return response
-
-    params = CaseInsensitiveDict(request.args.items())
-    if "chunk_size" in params:
-        chunk_size = max(1, int(params["chunk_size"]))
-    else:
-        chunk_size = 10 * 1024
-
-    duration = float(params.get("duration", 0))
-    pause_per_byte = duration / numbytes
-
-    request_headers = get_headers()
-    first_byte_pos, last_byte_pos = get_request_range(request_headers, numbytes)
-    range_length = (last_byte_pos + 1) - first_byte_pos
-
-    if (
-        first_byte_pos > last_byte_pos
-        or first_byte_pos not in xrange(0, numbytes)
-        or last_byte_pos not in xrange(0, numbytes)
-    ):
-        response = Response(
-            headers={
-                "ETag": "range%d" % numbytes,
-                "Accept-Ranges": "bytes",
-                "Content-Range": "bytes */%d" % numbytes,
-                "Content-Length": "0",
-            }
-        )
-        response.status_code = 416
-        return response
-
-    def generate_bytes():
-        chunks = bytearray()
-
-        for i in xrange(first_byte_pos, last_byte_pos + 1):
-
-            # We don't want the resource to change across requests, so we need
-            # to use a predictable data generation function
-            chunks.append(ord("a") + (i % 26))
-            if len(chunks) == chunk_size:
-                yield (bytes(chunks))
-                time.sleep(pause_per_byte * chunk_size)
-                chunks = bytearray()
-
-        if chunks:
-            time.sleep(pause_per_byte * len(chunks))
-            yield (bytes(chunks))
-
-    content_range = "bytes %d-%d/%d" % (first_byte_pos, last_byte_pos, numbytes)
-    response_headers = {
-        "Content-Type": "application/octet-stream",
-        "ETag": "range%d" % numbytes,
-        "Accept-Ranges": "bytes",
-        "Content-Length": str(range_length),
-        "Content-Range": content_range,
-    }
-
-    response = Response(generate_bytes(), headers=response_headers)
-
-    if (first_byte_pos == 0) and (last_byte_pos == (numbytes - 1)):
-        response.status_code = 200
-    else:
-        response.status_code = 206
-
-    return response
-
-
-@app.route("/links/<int:n>/<int:offset>")
-def link_page(n, offset):
-    """Generate a page containing n links to other pages which do the same.
-    ---
-    tags:
-      - Dynamic data
-    parameters:
-      - in: path
-        name: n
-        type: int
-      - in: path
-        name: offset
-        type: int
-    produces:
-      - text/html
-    responses:
-      200:
-        description: HTML links.
-    """
-    n = min(max(1, n), 200)  # limit to between 1 and 200 links
-
-    link = "<a href='{0}'>{1}</a> "
-
-    html = ["<html><head><title>Links</title></head><body>"]
-    for i in xrange(n):
-        if i == offset:
-            html.append("{0} ".format(i))
-        else:
-            html.append(link.format(url_for("link_page", n=n, offset=i), i))
-    html.append("</body></html>")
-
-    return "".join(html)
-
-
-@app.route("/links/<int:n>")
-def links(n):
-    """Redirect to first links page."""
-    return redirect(url_for("link_page", n=n, offset=0))
-
-
-@app.route("/image")
-def image():
-    """Returns a simple image of the type suggest by the Accept header.
-    ---
-    tags:
-      - Images
-    produces:
-      - image/webp
-      - image/svg+xml
-      - image/jpeg
-      - image/png
-      - image/*
-    responses:
-      200:
-        description: An image.
-    """
-
-    headers = get_headers()
-    if "accept" not in headers:
-        return image_png()  # Default media type to png
-
-    accept = headers["accept"].lower()
-
-    if "image/webp" in accept:
-        return image_webp()
-    elif "image/svg+xml" in accept:
-        return image_svg()
-    elif "image/jpeg" in accept:
-        return image_jpeg()
-    elif "image/png" in accept or "image/*" in accept:
-        return image_png()
-    else:
-        return status_code(406)  # Unsupported media type
-
-
-@app.route("/image/png")
-def image_png():
-    """Returns a simple PNG image.
-    ---
-    tags:
-      - Images
-    produces:
-      - image/png
-    responses:
-      200:
-        description: A PNG image.
-    """
-    data = resource("images/pig_icon.png")
-    return Response(data, headers={"Content-Type": "image/png"})
-
-
-@app.route("/image/jpeg")
-def image_jpeg():
-    """Returns a simple JPEG image.
-    ---
-    tags:
-      - Images
-    produces:
-      - image/jpeg
-    responses:
-      200:
-        description: A JPEG image.
-    """
-    data = resource("images/jackal.jpg")
-    return Response(data, headers={"Content-Type": "image/jpeg"})
-
-
-@app.route("/image/webp")
-def image_webp():
-    """Returns a simple WEBP image.
-    ---
-    tags:
-      - Images
-    produces:
-      - image/webp
-    responses:
-      200:
-        description: A WEBP image.
-    """
-    data = resource("images/wolf_1.webp")
-    return Response(data, headers={"Content-Type": "image/webp"})
-
-
-@app.route("/image/svg")
-def image_svg():
-    """Returns a simple SVG image.
-    ---
-    tags:
-      - Images
-    produces:
-      - image/svg+xml
-    responses:
-      200:
-        description: An SVG image.
-    """
-    data = resource("images/svg_logo.svg")
-    return Response(data, headers={"Content-Type": "image/svg+xml"})
-
-
-@app.route("/xml")
-def xml():
-    """Returns a simple XML document.
-    ---
-    tags:
-      - Response formats
-    produces:
-      - application/xml
-    responses:
-      200:
-        description: An XML document.
-    """
-    response = make_response(render_template("sample.xml"))
-    response.headers["Content-Type"] = "application/xml"
-    return response
-
-
-@app.route("/json")
-def a_json_endpoint():
-    """Returns a simple JSON document.
-    ---
-    tags:
-      - Response formats
-    produces:
-      - application/json
-    responses:
-      200:
-        description: An JSON document.
-    """
-    return flask_jsonify(
-        slideshow={
-            "title": "Sample Slide Show",
-            "date": "date of publication",
-            "author": "Yours Truly",
-            "slides": [
-                {"type": "all", "title": "Wake up to WonderWidgets!"},
-                {
-                    "type": "all",
-                    "title": "Overview",
-                    "items": [
-                        "Why <em>WonderWidgets</em> are great",
-                        "Who <em>buys</em> WonderWidgets",
-                    ],
-                },
-            ],
-        }
-    )
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=5000)
-    parser.add_argument("--host", default="127.0.0.1")
-    args = parser.parse_args()
-    app.run(port=args.port, host=args.host)
+# @app.route("/base64/<value>")
+# def decode_base64(value):
+#     """Decodes base64url-encoded string.
+#     ---
+#     tags:
+#       - Dynamic data
+#     parameters:
+#       - in: path
+#         name: value
+#         type: string
+#         default: SFRUUEJJTiBpcyBhd2Vzb21l
+#     produces:
+#       - text/html
+#     responses:
+#       200:
+#         description: Decoded base64 content.
+#     """
+#     encoded = value.encode("utf-8")  # base64 expects binary string as input
+#     try:
+#         return base64.urlsafe_b64decode(encoded).decode("utf-8")
+#     except:
+#         return "Incorrect Base64 data try: SFRUUEJJTiBpcyBhd2Vzb21l"
+
+
+# @app.route("/cache", methods=("GET",))
+# def cache():
+#     """Returns a 304 if an If-Modified-Since header or If-None-Match is present. Returns the same as a GET otherwise.
+#     ---
+#     tags:
+#       - Response inspection
+#     parameters:
+#       - in: header
+#         name: If-Modified-Since
+#       - in: header
+#         name: If-None-Match
+#     produces:
+#       - application/json
+#     responses:
+#       200:
+#         description: Cached response
+#       304:
+#         description: Modified
+
+#     """
+#     is_conditional = request.headers.get("If-Modified-Since") or request.headers.get(
+#         "If-None-Match"
+#     )
+
+#     if is_conditional is None:
+#         response = view_get()
+#         response.headers["Last-Modified"] = http_date()
+#         response.headers["ETag"] = uuid.uuid4().hex
+#         return response
+#     else:
+#         return status_code(304)
+
+
+# @app.route("/etag/<etag>", methods=("GET",))
+# def etag(etag):
+#     """Assumes the resource has the given etag and responds to If-None-Match and If-Match headers appropriately.
+#     ---
+#     tags:
+#       - Response inspection
+#     parameters:
+#       - in: header
+#         name: If-None-Match
+#       - in: header
+#         name: If-Match
+#     produces:
+#       - application/json
+#     responses:
+#       200:
+#         description: Normal response
+#       412:
+#         description: match
+
+#     """
+#     if_none_match = parse_multi_value_header(request.headers.get("If-None-Match"))
+#     if_match = parse_multi_value_header(request.headers.get("If-Match"))
+
+#     if if_none_match:
+#         if etag in if_none_match or "*" in if_none_match:
+#             response = status_code(304)
+#             response.headers["ETag"] = etag
+#             return response
+#     elif if_match:
+#         if etag not in if_match and "*" not in if_match:
+#             return status_code(412)
+
+#     # Special cases don't apply, return normal response
+#     response = view_get()
+#     response.headers["ETag"] = etag
+#     return response
+
+
+# @app.route("/cache/<int:value>")
+# def cache_control(value):
+#     """Sets a Cache-Control header for n seconds.
+#     ---
+#     tags:
+#       - Response inspection
+#     parameters:
+#       - in: path
+#         name: value
+#         type: integer
+#     produces:
+#       - application/json
+#     responses:
+#       200:
+#         description: Cache control set
+#     """
+#     response = view_get()
+#     response.headers["Cache-Control"] = "public, max-age={0}".format(value)
+#     return response
+
+
+# @app.route("/encoding/utf8")
+# def encoding():
+#     """Returns a UTF-8 encoded body.
+#     ---
+#     tags:
+#       - Response formats
+#     produces:
+#       - text/html
+#     responses:
+#       200:
+#         description: Encoded UTF-8 content.
+#     """
+
+#     return render_template("UTF-8-demo.txt")
+
+
+# @app.route("/bytes/<int:n>")
+# def random_bytes(n):
+#     """Returns n random bytes generated with given seed
+#     ---
+#     tags:
+#       - Dynamic data
+#     parameters:
+#       - in: path
+#         name: n
+#         type: int
+#     produces:
+#       - application/octet-stream
+#     responses:
+#       200:
+#         description: Bytes.
+#     """
+
+#     n = min(n, 100 * 1024)  # set 100KB limit
+
+#     params = CaseInsensitiveDict(request.args.items())
+#     if "seed" in params:
+#         random.seed(int(params["seed"]))
+
+#     response = make_response()
+
+#     # Note: can't just use os.urandom here because it ignores the seed
+#     response.data = bytearray(random.randint(0, 255) for i in range(n))
+#     response.content_type = "application/octet-stream"
+#     return response
+
+
+# @app.route("/stream-bytes/<int:n>")
+# def stream_random_bytes(n):
+#     """Streams n random bytes generated with given seed, at given chunk size per packet.
+#     ---
+#     tags:
+#       - Dynamic data
+#     parameters:
+#       - in: path
+#         name: n
+#         type: int
+#     produces:
+#       - application/octet-stream
+#     responses:
+#       200:
+#         description: Bytes.
+#     """
+#     n = min(n, 100 * 1024)  # set 100KB limit
+
+#     params = CaseInsensitiveDict(request.args.items())
+#     if "seed" in params:
+#         random.seed(int(params["seed"]))
+
+#     if "chunk_size" in params:
+#         chunk_size = max(1, int(params["chunk_size"]))
+#     else:
+#         chunk_size = 10 * 1024
+
+#     def generate_bytes():
+#         chunks = bytearray()
+
+#         for i in xrange(n):
+#             chunks.append(random.randint(0, 255))
+#             if len(chunks) == chunk_size:
+#                 yield (bytes(chunks))
+#                 chunks = bytearray()
+
+#         if chunks:
+#             yield (bytes(chunks))
+
+#     headers = {"Content-Type": "application/octet-stream"}
+
+#     return Response(generate_bytes(), headers=headers)
+
+
+# @app.route("/range/<int:numbytes>")
+# def range_request(numbytes):
+#     """Streams n random bytes generated with given seed, at given chunk size per packet.
+#     ---
+#     tags:
+#       - Dynamic data
+#     parameters:
+#       - in: path
+#         name: numbytes
+#         type: int
+#     produces:
+#       - application/octet-stream
+#     responses:
+#       200:
+#         description: Bytes.
+#     """
+
+#     if numbytes <= 0 or numbytes > (100 * 1024):
+#         response = Response(
+#             headers={"ETag": "range%d" % numbytes, "Accept-Ranges": "bytes"}
+#         )
+#         response.status_code = 404
+#         response.data = "number of bytes must be in the range (0, 102400]"
+#         return response
+
+#     params = CaseInsensitiveDict(request.args.items())
+#     if "chunk_size" in params:
+#         chunk_size = max(1, int(params["chunk_size"]))
+#     else:
+#         chunk_size = 10 * 1024
+
+#     duration = float(params.get("duration", 0))
+#     pause_per_byte = duration / numbytes
+
+#     request_headers = get_headers()
+#     first_byte_pos, last_byte_pos = get_request_range(request_headers, numbytes)
+#     range_length = (last_byte_pos + 1) - first_byte_pos
+
+#     if (
+#         first_byte_pos > last_byte_pos
+#         or first_byte_pos not in xrange(0, numbytes)
+#         or last_byte_pos not in xrange(0, numbytes)
+#     ):
+#         response = Response(
+#             headers={
+#                 "ETag": "range%d" % numbytes,
+#                 "Accept-Ranges": "bytes",
+#                 "Content-Range": "bytes */%d" % numbytes,
+#                 "Content-Length": "0",
+#             }
+#         )
+#         response.status_code = 416
+#         return response
+
+#     def generate_bytes():
+#         chunks = bytearray()
+
+#         for i in xrange(first_byte_pos, last_byte_pos + 1):
+
+#             # We don't want the resource to change across requests, so we need
+#             # to use a predictable data generation function
+#             chunks.append(ord("a") + (i % 26))
+#             if len(chunks) == chunk_size:
+#                 yield (bytes(chunks))
+#                 time.sleep(pause_per_byte * chunk_size)
+#                 chunks = bytearray()
+
+#         if chunks:
+#             time.sleep(pause_per_byte * len(chunks))
+#             yield (bytes(chunks))
+
+#     content_range = "bytes %d-%d/%d" % (first_byte_pos, last_byte_pos, numbytes)
+#     response_headers = {
+#         "Content-Type": "application/octet-stream",
+#         "ETag": "range%d" % numbytes,
+#         "Accept-Ranges": "bytes",
+#         "Content-Length": str(range_length),
+#         "Content-Range": content_range,
+#     }
+
+#     response = Response(generate_bytes(), headers=response_headers)
+
+#     if (first_byte_pos == 0) and (last_byte_pos == (numbytes - 1)):
+#         response.status_code = 200
+#     else:
+#         response.status_code = 206
+
+#     return response
+
+
+# @app.route("/links/<int:n>/<int:offset>")
+# def link_page(n, offset):
+#     """Generate a page containing n links to other pages which do the same.
+#     ---
+#     tags:
+#       - Dynamic data
+#     parameters:
+#       - in: path
+#         name: n
+#         type: int
+#       - in: path
+#         name: offset
+#         type: int
+#     produces:
+#       - text/html
+#     responses:
+#       200:
+#         description: HTML links.
+#     """
+#     n = min(max(1, n), 200)  # limit to between 1 and 200 links
+
+#     link = "<a href='{0}'>{1}</a> "
+
+#     html = ["<html><head><title>Links</title></head><body>"]
+#     for i in xrange(n):
+#         if i == offset:
+#             html.append("{0} ".format(i))
+#         else:
+#             html.append(link.format(url_for("link_page", n=n, offset=i), i))
+#     html.append("</body></html>")
+
+#     return "".join(html)
+
+
+# @app.route("/links/<int:n>")
+# def links(n):
+#     """Redirect to first links page."""
+#     return redirect(url_for("link_page", n=n, offset=0))
+
+
+# @app.route("/image")
+# def image():
+#     """Returns a simple image of the type suggest by the Accept header.
+#     ---
+#     tags:
+#       - Images
+#     produces:
+#       - image/webp
+#       - image/svg+xml
+#       - image/jpeg
+#       - image/png
+#       - image/*
+#     responses:
+#       200:
+#         description: An image.
+#     """
+
+#     headers = get_headers()
+#     if "accept" not in headers:
+#         return image_png()  # Default media type to png
+
+#     accept = headers["accept"].lower()
+
+#     if "image/webp" in accept:
+#         return image_webp()
+#     elif "image/svg+xml" in accept:
+#         return image_svg()
+#     elif "image/jpeg" in accept:
+#         return image_jpeg()
+#     elif "image/png" in accept or "image/*" in accept:
+#         return image_png()
+#     else:
+#         return status_code(406)  # Unsupported media type
+
+
+# @app.route("/image/png")
+# def image_png():
+#     """Returns a simple PNG image.
+#     ---
+#     tags:
+#       - Images
+#     produces:
+#       - image/png
+#     responses:
+#       200:
+#         description: A PNG image.
+#     """
+#     data = resource("images/pig_icon.png")
+#     return Response(data, headers={"Content-Type": "image/png"})
+
+
+# @app.route("/image/jpeg")
+# def image_jpeg():
+#     """Returns a simple JPEG image.
+#     ---
+#     tags:
+#       - Images
+#     produces:
+#       - image/jpeg
+#     responses:
+#       200:
+#         description: A JPEG image.
+#     """
+#     data = resource("images/jackal.jpg")
+#     return Response(data, headers={"Content-Type": "image/jpeg"})
+
+
+# @app.route("/image/webp")
+# def image_webp():
+#     """Returns a simple WEBP image.
+#     ---
+#     tags:
+#       - Images
+#     produces:
+#       - image/webp
+#     responses:
+#       200:
+#         description: A WEBP image.
+#     """
+#     data = resource("images/wolf_1.webp")
+#     return Response(data, headers={"Content-Type": "image/webp"})
+
+
+# @app.route("/image/svg")
+# def image_svg():
+#     """Returns a simple SVG image.
+#     ---
+#     tags:
+#       - Images
+#     produces:
+#       - image/svg+xml
+#     responses:
+#       200:
+#         description: An SVG image.
+#     """
+#     data = resource("images/svg_logo.svg")
+#     return Response(data, headers={"Content-Type": "image/svg+xml"})
+
+
+# @app.route("/xml")
+# def xml():
+#     """Returns a simple XML document.
+#     ---
+#     tags:
+#       - Response formats
+#     produces:
+#       - application/xml
+#     responses:
+#       200:
+#         description: An XML document.
+#     """
+#     response = make_response(render_template("sample.xml"))
+#     response.headers["Content-Type"] = "application/xml"
+#     return response
+
+
+# @app.route("/json")
+# def a_json_endpoint():
+#     """Returns a simple JSON document.
+#     ---
+#     tags:
+#       - Response formats
+#     produces:
+#       - application/json
+#     responses:
+#       200:
+#         description: An JSON document.
+#     """
+#     return flask_jsonify(
+#         slideshow={
+#             "title": "Sample Slide Show",
+#             "date": "date of publication",
+#             "author": "Yours Truly",
+#             "slides": [
+#                 {"type": "all", "title": "Wake up to WonderWidgets!"},
+#                 {
+#                     "type": "all",
+#                     "title": "Overview",
+#                     "items": [
+#                         "Why <em>WonderWidgets</em> are great",
+#                         "Who <em>buys</em> WonderWidgets",
+#                     ],
+#                 },
+#             ],
+#         }
+#     )
