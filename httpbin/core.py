@@ -830,36 +830,36 @@ def response_headers():
     return response
 
 
-# @app.route("/cookies")
-# def view_cookies(hide_env=True):
-#     """Returns cookie data.
-#     ---
-#     tags:
-#       - Cookies
-#     produces:
-#       - application/json
-#     responses:
-#       200:
-#         description: Set cookies.
-#     """
+@app.route("/cookies")
+def view_cookies(hide_env=True):
+    """Returns cookie data.
+    ---
+    tags:
+      - Cookies
+    produces:
+      - application/json
+    responses:
+      200:
+        description: Set cookies.
+    """
 
-#     cookies = dict(request.cookies.items())
+    cookies = dict(request.cookies.items())
 
-#     if hide_env and ("show_env" not in request.args):
-#         for key in ENV_COOKIES:
-#             try:
-#                 del cookies[key]
-#             except KeyError:
-#                 pass
+    if hide_env and ("show_env" not in request.args):
+        for key in ENV_COOKIES:
+            try:
+                del cookies[key]
+            except KeyError:
+                pass
 
-#     return jsonify(cookies=cookies)
+    return jsonify(cookies=cookies)
 
 
-# @app.route("/forms/post")
-# def view_forms_post():
-#     """Simple HTML form."""
+@app.route("/forms/post")
+def view_forms_post():
+    """Simple HTML form."""
 
-#     return render_template("forms-post.html")
+    return render_template("forms-post.html")
 
 
 # @app.route("/cookies/set/<name>/<value>")
