@@ -340,494 +340,494 @@ def resource(filename):
 ####################
 ####################
 
-@app.route("/html")
-def view_html_page():
-    """Returns a simple HTML document.
-    ---
-    tags:
-      - Response formats
-    produces:
-      - text/html
-    responses:
-      200:
-        description: An HTML page.
-    """
-
-    return render_template("moby.html")
-
-
-@app.route("/robots.txt")
-def view_robots_page():
-    """Returns some robots.txt rules.
-    ---
-    tags:
-      - Response formats
-    produces:
-      - text/plain
-    responses:
-      200:
-        description: Robots file
-    """
-
-    response = make_response()
-    response.data = ROBOT_TXT
-    response.content_type = "text/plain"
-    return response
-
-
-@app.route("/deny")
-def view_deny_page():
-    """Returns page denied by robots.txt rules.
-    ---
-    tags:
-      - Response formats
-    produces:
-      - text/plain
-    responses:
-      200:
-        description: Denied message
-    """
-    response = make_response()
-    response.data = ANGRY_ASCII
-    response.content_type = "text/plain"
-    return response
-    # return "YOU SHOULDN'T BE HERE"
-
-
-@app.route("/ip")
-def view_origin():
-    """Returns the requester's IP Address.
-    ---
-    tags:
-      - Request inspection
-    produces:
-      - application/json
-    responses:
-      200:
-        description: The Requester's IP Address.
-    """
-
-    return jsonify(origin=request.headers.get("X-Forwarded-For", request.remote_addr))
-
-
-@app.route("/uuid")
-def view_uuid():
-    """Return a UUID4.
-    ---
-    tags:
-      - Dynamic data
-    produces:
-      - application/json
-    responses:
-      200:
-        description: A UUID4.
-    """
-
-    return jsonify(uuid=str(uuid.uuid4()))
-
-
-@app.route("/headers")
-def view_headers():
-    """Return the incoming request's HTTP headers.
-    ---
-    tags:
-      - Request inspection
-    produces:
-      - application/json
-    responses:
-      200:
-        description: The request's headers.
-    """
-
-    return jsonify(get_dict('headers'))
-
+# @app.route("/html")
+# def view_html_page():
+#     """Returns a simple HTML document.
+#     ---
+#     tags:
+#       - Response formats
+#     produces:
+#       - text/html
+#     responses:
+#       200:
+#         description: An HTML page.
+#     """
+
+#     return render_template("moby.html")
+
+
+# @app.route("/robots.txt")
+# def view_robots_page():
+#     """Returns some robots.txt rules.
+#     ---
+#     tags:
+#       - Response formats
+#     produces:
+#       - text/plain
+#     responses:
+#       200:
+#         description: Robots file
+#     """
+
+#     response = make_response()
+#     response.data = ROBOT_TXT
+#     response.content_type = "text/plain"
+#     return response
+
+
+# @app.route("/deny")
+# def view_deny_page():
+#     """Returns page denied by robots.txt rules.
+#     ---
+#     tags:
+#       - Response formats
+#     produces:
+#       - text/plain
+#     responses:
+#       200:
+#         description: Denied message
+#     """
+#     response = make_response()
+#     response.data = ANGRY_ASCII
+#     response.content_type = "text/plain"
+#     return response
+#     # return "YOU SHOULDN'T BE HERE"
+
+
+# @app.route("/ip")
+# def view_origin():
+#     """Returns the requester's IP Address.
+#     ---
+#     tags:
+#       - Request inspection
+#     produces:
+#       - application/json
+#     responses:
+#       200:
+#         description: The Requester's IP Address.
+#     """
+
+#     return jsonify(origin=request.headers.get("X-Forwarded-For", request.remote_addr))
+
+
+# @app.route("/uuid")
+# def view_uuid():
+#     """Return a UUID4.
+#     ---
+#     tags:
+#       - Dynamic data
+#     produces:
+#       - application/json
+#     responses:
+#       200:
+#         description: A UUID4.
+#     """
+
+#     return jsonify(uuid=str(uuid.uuid4()))
+
+
+# @app.route("/headers")
+# def view_headers():
+#     """Return the incoming request's HTTP headers.
+#     ---
+#     tags:
+#       - Request inspection
+#     produces:
+#       - application/json
+#     responses:
+#       200:
+#         description: The request's headers.
+#     """
+
+#     return jsonify(get_dict('headers'))
+
 
-@app.route("/user-agent")
-def view_user_agent():
-    """Return the incoming requests's User-Agent header.
-    ---
-    tags:
-      - Request inspection
-    produces:
-      - application/json
-    responses:
-      200:
-        description: The request's User-Agent header.
-    """
-
-    headers = get_headers()
-
-    return jsonify({"user-agent": headers["user-agent"]})
-
-
-@app.route("/anything", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "TRACE"])
-@app.route(
-    "/anything/<path:anything>",
-    methods=["GET", "POST", "PUT", "DELETE", "PATCH", "TRACE"],
-)
-def view_anything(anything=None):
-    """Returns anything passed in request data.
-    ---
-    tags:
-      - Anything
-    produces:
-      - application/json
-    responses:
-      200:
-        description: Anything passed in request
-    """
-
-    return jsonify(
-        get_dict(
-            "url",
-            "args",
-            "headers",
-            "origin",
-            "method",
-            "form",
-            "data",
-            "files",
-            "json",
-        )
-    )
-
-
-@app.route("/gzip")
-@filters.gzip
-def view_gzip_encoded_content():
-    """Returns GZip-encoded data.
-    ---
-    tags:
-      - Response formats
-    produces:
-      - application/json
-    responses:
-      200:
-        description: GZip-encoded data.
-    """
-
-    return jsonify(get_dict("origin", "headers", method=request.method, gzipped=True))
-
-
-@app.route("/deflate")
-@filters.deflate
-def view_deflate_encoded_content():
-    """Returns Deflate-encoded data.
-    ---
-    tags:
-      - Response formats
-    produces:
-      - application/json
-    responses:
-      200:
-        description: Defalte-encoded data.
-    """
-
-    return jsonify(get_dict("origin", "headers", method=request.method, deflated=True))
-
-
-@app.route("/brotli")
-@filters.brotli
-def view_brotli_encoded_content():
-    """Returns Brotli-encoded data.
-    ---
-    tags:
-      - Response formats
-    produces:
-      - application/json
-    responses:
-      200:
-        description: Brotli-encoded data.
-    """
-
-    return jsonify(get_dict("origin", "headers", method=request.method, brotli=True))
-
-
-@app.route("/redirect/<int:n>")
-def redirect_n_times(n):
-    """302 Redirects n times.
-    ---
-    tags:
-      - Redirects
-    parameters:
-      - in: path
-        name: n
-        type: int
-    produces:
-      - text/html
-    responses:
-      302:
-        description: A redirection.
-    """
-    assert n > 0
-
-    absolute = request.args.get("absolute", "false").lower() == "true"
-
-    if n == 1:
-        return redirect(url_for("view_get", _external=absolute))
-
-    if absolute:
-        return _redirect("absolute", n, True)
-    else:
-        return _redirect("relative", n, False)
-
-
-def _redirect(kind, n, external):
-    return redirect(
-        url_for("{0}_redirect_n_times".format(kind), n=n - 1, _external=external)
-    )
-
-
-@app.route("/redirect-to", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "TRACE"])
-def redirect_to():
-    """302/3XX Redirects to the given URL.
-    ---
-    tags:
-      - Redirects
-    produces:
-      - text/html
-    get:
-      parameters:
-        - in: query
-          name: url
-          type: string
-          required: true
-        - in: query
-          name: status_code
-          type: int
-    post:
-      consumes:
-        - application/x-www-form-urlencoded
-      parameters:
-        - in: formData
-          name: url
-          type: string
-          required: true
-        - in: formData
-          name: status_code
-          type: int
-          required: false
-    patch:
-      consumes:
-        - application/x-www-form-urlencoded
-      parameters:
-        - in: formData
-          name: url
-          type: string
-          required: true
-        - in: formData
-          name: status_code
-          type: int
-          required: false
-    put:
-      consumes:
-        - application/x-www-form-urlencoded
-      parameters:
-        - in: formData
-          name: url
-          type: string
-          required: true
-        - in: formData
-          name: status_code
-          type: int
-          required: false
-    responses:
-      302:
-        description: A redirection.
-    """
-
-    args_dict = request.args.items()
-    args = CaseInsensitiveDict(args_dict)
-
-    # We need to build the response manually and convert to UTF-8 to prevent
-    # werkzeug from "fixing" the URL. This endpoint should set the Location
-    # header to the exact string supplied.
-    response = app.make_response("")
-    response.status_code = 302
-    if "status_code" in args:
-        status_code = int(args["status_code"])
-        if status_code >= 300 and status_code < 400:
-            response.status_code = status_code
-    response.headers["Location"] = args["url"].encode("utf-8")
-
-    return response
-
-
-@app.route("/relative-redirect/<int:n>")
-def relative_redirect_n_times(n):
-    """Relatively 302 Redirects n times.
-    ---
-    tags:
-      - Redirects
-    parameters:
-      - in: path
-        name: n
-        type: int
-    produces:
-      - text/html
-    responses:
-      302:
-        description: A redirection.
-    """
-
-    assert n > 0
-
-    response = app.make_response("")
-    response.status_code = 302
-
-    if n == 1:
-        response.headers["Location"] = url_for("view_get")
-        return response
-
-    response.headers["Location"] = url_for("relative_redirect_n_times", n=n - 1)
-    return response
-
-
-@app.route("/absolute-redirect/<int:n>")
-def absolute_redirect_n_times(n):
-    """Absolutely 302 Redirects n times.
-    ---
-    tags:
-      - Redirects
-    parameters:
-      - in: path
-        name: n
-        type: int
-    produces:
-      - text/html
-    responses:
-      302:
-        description: A redirection.
-    """
-
-    assert n > 0
-
-    if n == 1:
-        return redirect(url_for("view_get", _external=True))
-
-    return _redirect("absolute", n, True)
-
-
-@app.route("/stream/<int:n>")
-def stream_n_messages(n):
-    """Stream n JSON responses
-    ---
-    tags:
-      - Dynamic data
-    parameters:
-      - in: path
-        name: n
-        type: int
-    produces:
-      - application/json
-    responses:
-      200:
-        description: Streamed JSON responses.
-    """
-    response = get_dict("url", "args", "headers", "origin")
-    n = min(n, 100)
-
-    def generate_stream():
-        for i in range(n):
-            response["id"] = i
-            yield json.dumps(response) + "\n"
-
-    return Response(generate_stream(), headers={"Content-Type": "application/json"})
-
-
-@app.route(
-    "/status/<codes>", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "TRACE"]
-)
-def view_status_code(codes):
-    """Return status code or random status code if more than one are given
-    ---
-    tags:
-      - Status codes
-    parameters:
-      - in: path
-        name: codes
-    produces:
-      - text/plain
-    responses:
-      100:
-        description: Informational responses
-      200:
-        description: Success
-      300:
-        description: Redirection
-      400:
-        description: Client Errors
-      500:
-        description: Server Errors
-    """
-
-    if "," not in codes:
-        try:
-            code = int(codes)
-        except ValueError:
-            return Response("Invalid status code", status=400)
-        return status_code(code)
-
-    choices = []
-    for choice in codes.split(","):
-        if ":" not in choice:
-            code = choice
-            weight = 1
-        else:
-            code, weight = choice.split(":")
-
-        try:
-            choices.append((int(code), float(weight)))
-        except ValueError:
-            return Response("Invalid status code", status=400)
-
-    code = weighted_choice(choices)
-
-    return status_code(code)
-
-
-@app.route("/response-headers", methods=["GET", "POST"])
-def response_headers():
-    """Returns a set of response headers from the query string.
-    ---
-    tags:
-      - Response inspection
-    parameters:
-      - in: query
-        name: freeform
-        explode: true
-        allowEmptyValue: true
-        schema:
-          type: object
-          additionalProperties:
-            type: string
-        style: form
-    produces:
-      - application/json
-    responses:
-      200:
-        description: Response headers
-    """
-    # Pending swaggerUI update
-    # https://github.com/swagger-api/swagger-ui/issues/3850
-    headers = MultiDict(request.args.items(multi=True))
-    response = jsonify(list(headers.lists()))
-
-    while True:
-        original_data = response.data
-        d = {}
-        for key in response.headers.keys():
-            value = response.headers.get_all(key)
-            if len(value) == 1:
-                value = value[0]
-            d[key] = value
-        response = jsonify(d)
-        for key, value in headers.items(multi=True):
-            response.headers.add(key, value)
-        response_has_changed = response.data != original_data
-        if not response_has_changed:
-            break
-    return response
+# @app.route("/user-agent")
+# def view_user_agent():
+#     """Return the incoming requests's User-Agent header.
+#     ---
+#     tags:
+#       - Request inspection
+#     produces:
+#       - application/json
+#     responses:
+#       200:
+#         description: The request's User-Agent header.
+#     """
+
+#     headers = get_headers()
+
+#     return jsonify({"user-agent": headers["user-agent"]})
+
+
+# @app.route("/anything", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "TRACE"])
+# @app.route(
+#     "/anything/<path:anything>",
+#     methods=["GET", "POST", "PUT", "DELETE", "PATCH", "TRACE"],
+# )
+# def view_anything(anything=None):
+#     """Returns anything passed in request data.
+#     ---
+#     tags:
+#       - Anything
+#     produces:
+#       - application/json
+#     responses:
+#       200:
+#         description: Anything passed in request
+#     """
+
+#     return jsonify(
+#         get_dict(
+#             "url",
+#             "args",
+#             "headers",
+#             "origin",
+#             "method",
+#             "form",
+#             "data",
+#             "files",
+#             "json",
+#         )
+#     )
+
+
+# @app.route("/gzip")
+# @filters.gzip
+# def view_gzip_encoded_content():
+#     """Returns GZip-encoded data.
+#     ---
+#     tags:
+#       - Response formats
+#     produces:
+#       - application/json
+#     responses:
+#       200:
+#         description: GZip-encoded data.
+#     """
+
+#     return jsonify(get_dict("origin", "headers", method=request.method, gzipped=True))
+
+
+# @app.route("/deflate")
+# @filters.deflate
+# def view_deflate_encoded_content():
+#     """Returns Deflate-encoded data.
+#     ---
+#     tags:
+#       - Response formats
+#     produces:
+#       - application/json
+#     responses:
+#       200:
+#         description: Defalte-encoded data.
+#     """
+
+#     return jsonify(get_dict("origin", "headers", method=request.method, deflated=True))
+
+
+# @app.route("/brotli")
+# @filters.brotli
+# def view_brotli_encoded_content():
+#     """Returns Brotli-encoded data.
+#     ---
+#     tags:
+#       - Response formats
+#     produces:
+#       - application/json
+#     responses:
+#       200:
+#         description: Brotli-encoded data.
+#     """
+
+#     return jsonify(get_dict("origin", "headers", method=request.method, brotli=True))
+
+
+# @app.route("/redirect/<int:n>")
+# def redirect_n_times(n):
+#     """302 Redirects n times.
+#     ---
+#     tags:
+#       - Redirects
+#     parameters:
+#       - in: path
+#         name: n
+#         type: int
+#     produces:
+#       - text/html
+#     responses:
+#       302:
+#         description: A redirection.
+#     """
+#     assert n > 0
+
+#     absolute = request.args.get("absolute", "false").lower() == "true"
+
+#     if n == 1:
+#         return redirect(url_for("view_get", _external=absolute))
+
+#     if absolute:
+#         return _redirect("absolute", n, True)
+#     else:
+#         return _redirect("relative", n, False)
+
+
+# def _redirect(kind, n, external):
+#     return redirect(
+#         url_for("{0}_redirect_n_times".format(kind), n=n - 1, _external=external)
+#     )
+
+
+# @app.route("/redirect-to", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "TRACE"])
+# def redirect_to():
+#     """302/3XX Redirects to the given URL.
+#     ---
+#     tags:
+#       - Redirects
+#     produces:
+#       - text/html
+#     get:
+#       parameters:
+#         - in: query
+#           name: url
+#           type: string
+#           required: true
+#         - in: query
+#           name: status_code
+#           type: int
+#     post:
+#       consumes:
+#         - application/x-www-form-urlencoded
+#       parameters:
+#         - in: formData
+#           name: url
+#           type: string
+#           required: true
+#         - in: formData
+#           name: status_code
+#           type: int
+#           required: false
+#     patch:
+#       consumes:
+#         - application/x-www-form-urlencoded
+#       parameters:
+#         - in: formData
+#           name: url
+#           type: string
+#           required: true
+#         - in: formData
+#           name: status_code
+#           type: int
+#           required: false
+#     put:
+#       consumes:
+#         - application/x-www-form-urlencoded
+#       parameters:
+#         - in: formData
+#           name: url
+#           type: string
+#           required: true
+#         - in: formData
+#           name: status_code
+#           type: int
+#           required: false
+#     responses:
+#       302:
+#         description: A redirection.
+#     """
+
+#     args_dict = request.args.items()
+#     args = CaseInsensitiveDict(args_dict)
+
+#     # We need to build the response manually and convert to UTF-8 to prevent
+#     # werkzeug from "fixing" the URL. This endpoint should set the Location
+#     # header to the exact string supplied.
+#     response = app.make_response("")
+#     response.status_code = 302
+#     if "status_code" in args:
+#         status_code = int(args["status_code"])
+#         if status_code >= 300 and status_code < 400:
+#             response.status_code = status_code
+#     response.headers["Location"] = args["url"].encode("utf-8")
+
+#     return response
+
+
+# @app.route("/relative-redirect/<int:n>")
+# def relative_redirect_n_times(n):
+#     """Relatively 302 Redirects n times.
+#     ---
+#     tags:
+#       - Redirects
+#     parameters:
+#       - in: path
+#         name: n
+#         type: int
+#     produces:
+#       - text/html
+#     responses:
+#       302:
+#         description: A redirection.
+#     """
+
+#     assert n > 0
+
+#     response = app.make_response("")
+#     response.status_code = 302
+
+#     if n == 1:
+#         response.headers["Location"] = url_for("view_get")
+#         return response
+
+#     response.headers["Location"] = url_for("relative_redirect_n_times", n=n - 1)
+#     return response
+
+
+# @app.route("/absolute-redirect/<int:n>")
+# def absolute_redirect_n_times(n):
+#     """Absolutely 302 Redirects n times.
+#     ---
+#     tags:
+#       - Redirects
+#     parameters:
+#       - in: path
+#         name: n
+#         type: int
+#     produces:
+#       - text/html
+#     responses:
+#       302:
+#         description: A redirection.
+#     """
+
+#     assert n > 0
+
+#     if n == 1:
+#         return redirect(url_for("view_get", _external=True))
+
+#     return _redirect("absolute", n, True)
+
+
+# @app.route("/stream/<int:n>")
+# def stream_n_messages(n):
+#     """Stream n JSON responses
+#     ---
+#     tags:
+#       - Dynamic data
+#     parameters:
+#       - in: path
+#         name: n
+#         type: int
+#     produces:
+#       - application/json
+#     responses:
+#       200:
+#         description: Streamed JSON responses.
+#     """
+#     response = get_dict("url", "args", "headers", "origin")
+#     n = min(n, 100)
+
+#     def generate_stream():
+#         for i in range(n):
+#             response["id"] = i
+#             yield json.dumps(response) + "\n"
+
+#     return Response(generate_stream(), headers={"Content-Type": "application/json"})
+
+
+# @app.route(
+#     "/status/<codes>", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "TRACE"]
+# )
+# def view_status_code(codes):
+#     """Return status code or random status code if more than one are given
+#     ---
+#     tags:
+#       - Status codes
+#     parameters:
+#       - in: path
+#         name: codes
+#     produces:
+#       - text/plain
+#     responses:
+#       100:
+#         description: Informational responses
+#       200:
+#         description: Success
+#       300:
+#         description: Redirection
+#       400:
+#         description: Client Errors
+#       500:
+#         description: Server Errors
+#     """
+
+#     if "," not in codes:
+#         try:
+#             code = int(codes)
+#         except ValueError:
+#             return Response("Invalid status code", status=400)
+#         return status_code(code)
+
+#     choices = []
+#     for choice in codes.split(","):
+#         if ":" not in choice:
+#             code = choice
+#             weight = 1
+#         else:
+#             code, weight = choice.split(":")
+
+#         try:
+#             choices.append((int(code), float(weight)))
+#         except ValueError:
+#             return Response("Invalid status code", status=400)
+
+#     code = weighted_choice(choices)
+
+#     return status_code(code)
+
+
+# @app.route("/response-headers", methods=["GET", "POST"])
+# def response_headers():
+#     """Returns a set of response headers from the query string.
+#     ---
+#     tags:
+#       - Response inspection
+#     parameters:
+#       - in: query
+#         name: freeform
+#         explode: true
+#         allowEmptyValue: true
+#         schema:
+#           type: object
+#           additionalProperties:
+#             type: string
+#         style: form
+#     produces:
+#       - application/json
+#     responses:
+#       200:
+#         description: Response headers
+#     """
+#     # Pending swaggerUI update
+#     # https://github.com/swagger-api/swagger-ui/issues/3850
+#     headers = MultiDict(request.args.items(multi=True))
+#     response = jsonify(list(headers.lists()))
+
+#     while True:
+#         original_data = response.data
+#         d = {}
+#         for key in response.headers.keys():
+#             value = response.headers.get_all(key)
+#             if len(value) == 1:
+#                 value = value[0]
+#             d[key] = value
+#         response = jsonify(d)
+#         for key, value in headers.items(multi=True):
+#             response.headers.add(key, value)
+#         response_has_changed = response.data != original_data
+#         if not response_has_changed:
+#             break
+#     return response
 
 
 @app.route("/cookies")
