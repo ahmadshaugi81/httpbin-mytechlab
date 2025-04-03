@@ -329,6 +329,19 @@ def view_landing_page():
     """Generates Landing Page in legacy layout."""
     return render_template("index.html")
 
+def resource(filename):
+    path = os.path.join(tmpl_dir, filename)
+    with open(path, "rb") as f:
+      return f.read()
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--port", type=int, default=5000)
+    parser.add_argument("--host", default="127.0.0.1")
+    args = parser.parse_args()
+    app.run(port=args.port, host=args.host)
+
+
 
 # @app.route("/html")
 # def view_html_page():
@@ -1722,12 +1735,6 @@ def view_landing_page():
 #     return Response(data, headers={"Content-Type": "image/svg+xml"})
 
 
-# def resource(filename):
-#     path = os.path.join(tmpl_dir, filename)
-#     with open(path, "rb") as f:
-#       return f.read()
-
-
 # @app.route("/xml")
 # def xml():
 #     """Returns a simple XML document.
@@ -1775,11 +1782,3 @@ def view_landing_page():
 #             ],
 #         }
 #     )
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=5000)
-    parser.add_argument("--host", default="127.0.0.1")
-    args = parser.parse_args()
-    app.run(port=args.port, host=args.host)
