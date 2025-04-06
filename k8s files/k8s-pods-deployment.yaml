@@ -1,1 +1,10 @@
-# TEMPLATE
+apiVersion: v1
+kind: Pod
+metadata:
+  name: httpbin-mytechlab
+  labels:
+    name: httpbin-mytechlab
+spec:
+  containers:
+  - name: httpbin-mytechlab
+    image: ahmadshaugi81/hello-nginx:latest
